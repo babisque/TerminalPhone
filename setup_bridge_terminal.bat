@@ -4,13 +4,15 @@ setlocal EnableDelayedExpansion
 :: ------------------------------------------------------------------------------------------------
 :: SETTINGS & PATHS
 :: ------------------------------------------------------------------------------------------------
-set "SERVICE_NAME=Bridge Terminal Service"
+set "SERVICE_NAME=BridgeTerminal"
+set "DISPLAY_NAME=Bridge Terminal Service"
 set "DESCRIPTION=A bridge service to execute terminal commands via Telegram for Windows and Arch Linux (WSL)."
+set "PROJECT_DIR=%~dp0TerminalPhone.Worker"
+set "PUBLISH_DIR=%~dp0TerminalPhone.Worker\bin\Release\net10.0\publish"
 set "EXE_NAME=TerminalPhone.Worker.exe"
-set "CURRENT_DIR=%~dp0"
 
 :: ------------------------------------------------------------------------------------------------
-:: STEP 1: SELF-ELEVATION (UAC Prompt)
+:: STEP 1: SELF-ELEVATION
 :: ------------------------------------------------------------------------------------------------
 net session >nul 2>&1
 if %errorLevel% neq 0 (
@@ -25,18 +27,34 @@ echo ======================================================================
 echo           BRIDGE TERMINAL - SERVICE MANAGEMENT TOOL
 echo ======================================================================
 echo.
-echo [1] Install Service
-echo [2] Uninstall Service
-echo [3] Exit
+echo [1] Install Service (Run as Current User - Recommended for Winget/WSL)
+echo [2] Install Service (Run as LocalSystem)
+echo [3] Uninstall Service
+echo [4] Exit
 echo.
 set /p "choice=Select an option: "
 
-if "%choice%"=="1" goto INSTALL
-if "%choice%"=="2" goto UNINSTALL
-if "%choice%"=="3" exit /b
+if "%choice%"=="1" goto INSTALL_USER
+if "%choice%"=="2" goto INSTALL_SYSTEM
+if "%choice%"=="3" goto UNINSTALL
+if "%choice%"=="4" exit /b
 goto MENU
 
-:INSTALL
+:INSTALL_USER
+set "RUN_AS_USER=%COMPUTERNAME%\%USERNAME%"
+echo.
+echo --- SERVICE ACCOUNT CONFIGURATION ---
+echo To access Winget and your WSL environment, the service needs your password.
+echo Account: %RUN_AS_USER%
+set /p "USER_PASS=Enter your Windows password: "
+goto DATA_COLLECTION
+
+:INSTALL_SYSTEM
+set "RUN_AS_USER="
+set "USER_PASS="
+goto DATA_COLLECTION
+
+:DATA_COLLECTION
 echo.
 echo --- STEP 1: DATA COLLECTION ---
 set /p "ADMIN_ID=Enter Telegram Admin ID (AdminId): "
@@ -50,58 +68,42 @@ setx /M TelegramSettings__GroupId "%GROUP_ID%"
 setx /M TelegramSettings__Token "%BOT_TOKEN%"
 
 echo.
-if exist "%CURRENT_DIR%%EXE_NAME%" (
-    echo --- RELEASE PACKAGE DETECTED ---
-    echo Skipping build process. Using existing binary.
-    set "FINAL_BIN_PATH=%CURRENT_DIR%%EXE_NAME%"
-    goto STEP4
-)
-
-echo --- STEP 3: PUBLISHING PROJECT (Dev Clone Mode) ---
-set "PROJECT_DIR=%CURRENT_DIR%TerminalPhone.Worker"
-set "PUBLISH_DIR=%PROJECT_DIR%\bin\Release\net10.0\publish"
-
-if not exist "%PROJECT_DIR%" (
-    echo ERROR: Project directory not found at %PROJECT_DIR%
-    pause
-    goto MENU
-)
-
-echo Building and publishing in Release mode...
+echo --- STEP 3: PUBLISHING PROJECT ---
 dotnet publish "%PROJECT_DIR%" -c Release -o "%PUBLISH_DIR%"
-set "FINAL_BIN_PATH=%PUBLISH_DIR%\%EXE_NAME%"
 
-:STEP4
 echo.
 echo --- STEP 4: CREATING WINDOWS SERVICE ---
-if not exist "%FINAL_BIN_PATH%" (
-    echo ERROR: Binary not found at "%FINAL_BIN_PATH%"
+if not exist "%PUBLISH_DIR%\%EXE_NAME%" (
+    echo ERROR: Binary not found at "%PUBLISH_DIR%\%EXE_NAME%"
     pause
     goto MENU
 )
 
-sc.exe create "%SERVICE_NAME%" binPath= "\"%FINAL_BIN_PATH%\"" start= auto
+:: Create Service
+if "%RUN_AS_USER%"=="" (
+    sc.exe create "%SERVICE_NAME%" binPath= "\"%PUBLISH_DIR%\%EXE_NAME%\"" start= auto
+) else (
+    sc.exe create "%SERVICE_NAME%" binPath= "\"%PUBLISH_DIR%\%EXE_NAME%\"" start= auto obj= "%RUN_AS_USER%" password= "%USER_PASS%"
+)
+
 sc.exe description "%SERVICE_NAME%" "%DESCRIPTION%"
-sc.exe config "%SERVICE_NAME%" DisplayName= "Bridge Terminal Service"
+sc.exe config "%SERVICE_NAME%" DisplayName= "%DISPLAY_NAME%"
 
 echo.
 echo --- STEP 5: STARTING SERVICE ---
 sc.exe start "%SERVICE_NAME%"
 
 echo.
-echo Done! Bridge Terminal Service is now installed and running.
+echo Done! Service is now installed. If 'sc start' fails, check your password.
 pause
 goto MENU
 
 :UNINSTALL
 echo.
 echo --- UNINSTALLING BRIDGE TERMINAL ---
-echo Stopping service...
 sc.exe stop "%SERVICE_NAME%"
-timeout /t 5 /nobreak >nul
-echo Deleting service...
+timeout /t 2 /nobreak >nul
 sc.exe delete "%SERVICE_NAME%"
-
 echo.
 echo Cleanup complete.
 pause

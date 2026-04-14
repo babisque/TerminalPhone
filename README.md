@@ -18,7 +18,7 @@
 *   **Windows Service Integration**: Operates as a background system service (`BridgeTerminal`) using `Microsoft.Extensions.Hosting.WindowsServices`.
 *   **Security First**:
     *   **AdminId Validation**: Only authorized users can trigger executions.
-    *   **User Secrets**: Sensitive tokens and IDs are stored using encrypted .NET User Secrets, never in plain text.
+    *   **System Environment Variables**: Sensitive tokens are stored as system-level variables, ensuring the service account can access them securely.
 
 ---
 
@@ -43,7 +43,7 @@ The project follows a strict separation of concerns to ensure maintainability an
 *   Telegram Bot Token (via @BotFather)
 
 ### 2. Configuration (`commands.json`)
-Define your available commands in the `TerminalPhone.Worker/commands.json` file:
+Define your available commands in the `TerminalPhone.Worker/commands.json` file. Use `%LOCALAPPDATA%` for tools like `winget`:
 ```json
 [
   {
@@ -54,22 +54,17 @@ Define your available commands in the `TerminalPhone.Worker/commands.json` file:
   }
 ]
 ```
-*Note: Environment `0` = Windows, `1` = ArchLinux.*
 
 ### 3. Secrets Management
-Configure your credentials securely using the .NET CLI:
-```bash
-dotnet user-secrets set "TelegramSettings:Token" "YOUR_BOT_TOKEN"
-dotnet user-secrets set "TelegramSettings:AdminId" "YOUR_USER_ID"
-dotnet user-secrets set "TelegramSettings:GroupId" "YOUR_GROUP_ID"
-```
+The service uses **System Environment Variables** for production. The `.bat` script handles this using `setx /M`:
+*   `TelegramSettings__Token`
+*   `TelegramSettings__AdminId`
+*   `TelegramSettings__GroupId`
 
 ### 4. Automated Installation
-Use the provided `setup_bridge_terminal.bat` script (requires Admin rights). It will:
-1. Elevate itself via UAC.
-2. Prompt for your Telegram credentials.
-3. Configure User Secrets.
-4. Publish the project and install it as the `BridgeTerminal` Windows Service.
+Use the provided `setup_bridge_terminal.bat` script (Run as Administrator):
+1.  **Option [1] (Run as Current User)**: Highly recommended to allow the service to access your user profile (Winget, WSL, etc.).
+2.  **Logon as a Service**: If the service fails to start (Error 1069), ensure your user has the "Log on as a service" right in the **Local Security Policy** (`secpol.msc`).
 
 ---
 
@@ -78,6 +73,6 @@ Use the provided `setup_bridge_terminal.bat` script (requires Admin rights). It 
 Once the service is running, simply open your Telegram bot:
 
 *   `/start`: Initializes the bot and syncs the slash command menu.
-*   `/update_all`: Triggers a full system update on the Arch Linux WSL instance.
-*   `/check_arch`: Executes `uname -a` and returns the kernel info.
+*   `/update_all`: Triggers a full system update on the Windows host.
+*   `/check_arch`: Executes `uname -a` on Arch Linux.
 *   `/shutdown`: Safely shuts down the Windows host remotely.

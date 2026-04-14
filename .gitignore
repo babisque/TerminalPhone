@@ -28,6 +28,7 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+publish/
 
 # Visual Studio 2015/2017/2019/2022 cache directory
 .vs/
@@ -73,6 +74,10 @@ yarn-error.log
 appsettings.json
 !appsettings.Development.json
 
+# Local Configuration & Sensitive info
+# Ignore local command overrides if desired
+# commands.json
+
 # Backup & System Files
 *.bak
 *.cache
@@ -80,3 +85,7 @@ appsettings.json
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# Mermaid Exports
+# Keep png for README, but ignore raw vector sources if needed
+# Diagram.svg
