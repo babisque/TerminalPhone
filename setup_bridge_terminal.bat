@@ -2,13 +2,12 @@
 setlocal EnableDelayedExpansion
 
 :: ------------------------------------------------------------------------------------------------
-:: SETTINGS & PATHS (Adjust these to your local paths)
+:: SETTINGS & PATHS
 :: ------------------------------------------------------------------------------------------------
 set "SERVICE_NAME=Bridge Terminal Service"
 set "DESCRIPTION=A bridge service to execute terminal commands via Telegram for Windows and Arch Linux (WSL)."
-set "PROJECT_DIR=%~dp0TerminalPhone.Worker"
-set "PUBLISH_DIR=%~dp0TerminalPhone.Worker\bin\Release\net10.0\publish"
 set "EXE_NAME=TerminalPhone.Worker.exe"
+set "CURRENT_DIR=%~dp0"
 
 :: ------------------------------------------------------------------------------------------------
 :: STEP 1: SELF-ELEVATION (UAC Prompt)
@@ -46,28 +45,42 @@ set /p "BOT_TOKEN=Enter Telegram Bot Token (Token): "
 
 echo.
 echo --- STEP 2: CONFIGURING SYSTEM ENVIRONMENT VARIABLES ---
-echo Saving TelegramSettings__AdminId...
 setx /M TelegramSettings__AdminId "%ADMIN_ID%"
-echo Saving TelegramSettings__GroupId...
 setx /M TelegramSettings__GroupId "%GROUP_ID%"
-echo Saving TelegramSettings__Token...
 setx /M TelegramSettings__Token "%BOT_TOKEN%"
 
 echo.
-echo --- STEP 3: PUBLISHING PROJECT ---
-echo Building and publishing in Release mode...
-dotnet publish "%PROJECT_DIR%" -c Release -o "%PUBLISH_DIR%"
+if exist "%CURRENT_DIR%%EXE_NAME%" (
+    echo --- RELEASE PACKAGE DETECTED ---
+    echo Skipping build process. Using existing binary.
+    set "FINAL_BIN_PATH=%CURRENT_DIR%%EXE_NAME%"
+    goto STEP4
+)
 
-echo.
-echo --- STEP 4: CREATING WINDOWS SERVICE ---
-if not exist "%PUBLISH_DIR%\%EXE_NAME%" (
-    echo ERROR: Binary not found at "%PUBLISH_DIR%\%EXE_NAME%"
+echo --- STEP 3: PUBLISHING PROJECT (Dev Clone Mode) ---
+set "PROJECT_DIR=%CURRENT_DIR%TerminalPhone.Worker"
+set "PUBLISH_DIR=%PROJECT_DIR%\bin\Release\net10.0\publish"
+
+if not exist "%PROJECT_DIR%" (
+    echo ERROR: Project directory not found at %PROJECT_DIR%
     pause
     goto MENU
 )
 
-:: Create the service (note the mandatory space after binPath=)
-sc.exe create "%SERVICE_NAME%" binPath= "\"%PUBLISH_DIR%\%EXE_NAME%\"" start= auto
+echo Building and publishing in Release mode...
+dotnet publish "%PROJECT_DIR%" -c Release -o "%PUBLISH_DIR%"
+set "FINAL_BIN_PATH=%PUBLISH_DIR%\%EXE_NAME%"
+
+:STEP4
+echo.
+echo --- STEP 4: CREATING WINDOWS SERVICE ---
+if not exist "%FINAL_BIN_PATH%" (
+    echo ERROR: Binary not found at "%FINAL_BIN_PATH%"
+    pause
+    goto MENU
+)
+
+sc.exe create "%SERVICE_NAME%" binPath= "\"%FINAL_BIN_PATH%\"" start= auto
 sc.exe description "%SERVICE_NAME%" "%DESCRIPTION%"
 sc.exe config "%SERVICE_NAME%" DisplayName= "Bridge Terminal Service"
 
@@ -85,7 +98,7 @@ echo.
 echo --- UNINSTALLING BRIDGE TERMINAL ---
 echo Stopping service...
 sc.exe stop "%SERVICE_NAME%"
-timeout /t 5 /nobreak >nul 
+timeout /t 5 /nobreak >nul
 echo Deleting service...
 sc.exe delete "%SERVICE_NAME%"
 

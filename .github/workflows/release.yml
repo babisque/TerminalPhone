@@ -1,0 +1,34 @@
+name: TerminalPhone Release CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build and Publish
+      run: |
+        dotnet publish TerminalPhone.slnx -c Release -r win-x64 --self-contained true -o ./publish
+
+    - name: Prepare Release Package
+      run: |
+        copy setup_bridge_terminal.bat ./publish/
+        
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: TerminalPhone-Alpha-Release
+        path: ./publish/
