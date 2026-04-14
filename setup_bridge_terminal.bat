@@ -27,7 +27,7 @@ echo ======================================================================
 echo           BRIDGE TERMINAL - SERVICE MANAGEMENT TOOL
 echo ======================================================================
 echo.
-echo [1] Install Service (Run as Current User - Recommended for Winget/WSL)
+echo [1] Install Service (Run as Current User - Auto Grant Permission)
 echo [2] Install Service (Run as LocalSystem)
 echo [3] Uninstall Service
 echo [4] Exit
@@ -44,9 +44,25 @@ goto MENU
 set "RUN_AS_USER=%COMPUTERNAME%\%USERNAME%"
 echo.
 echo --- SERVICE ACCOUNT CONFIGURATION ---
-echo To access Winget and your WSL environment, the service needs your password.
 echo Account: %RUN_AS_USER%
 set /p "USER_PASS=Enter your Windows password: "
+
+echo.
+echo --- GRANTING 'LOG ON AS A SERVICE' PERMISSION ---
+powershell -NoProfile -Command ^
+    "$user = '%RUN_AS_USER%'; ^
+    $sid = (New-Object System.Security.Principal.NTAccount($user)).Translate([System.Security.Principal.SecurityIdentifier]).Value; ^
+    $tmpFile = [System.IO.Path]::GetTempFileName(); ^
+    secedit /export /cfg $tmpFile /areas USER_RIGHTS /quiet; ^
+    $content = Get-Content $tmpFile; ^
+    if ($content -match 'SeServiceLogonRight') { ^
+        if ($content -match $sid) { Write-Host 'Permission already granted.' } ^
+        else { $content = $content -replace 'SeServiceLogonRight = ', ('SeServiceLogonRight = *' + $sid + ','); Set-Content $tmpFile $content; secedit /configure /db $env:temp\secedit.sdb /cfg $tmpFile /areas USER_RIGHTS /quiet; Write-Host 'Permission granted successfully.' } ^
+    } else { ^
+        $content += 'SeServiceLogonRight = *' + $sid; Set-Content $tmpFile $content; secedit /configure /db $env:temp\secedit.sdb /cfg $tmpFile /areas USER_RIGHTS /quiet; Write-Host 'Permission granted successfully.' ^
+    }; ^
+    Remove-Item $tmpFile -ErrorAction SilentlyContinue"
+
 goto DATA_COLLECTION
 
 :INSTALL_SYSTEM
@@ -94,7 +110,7 @@ echo --- STEP 5: STARTING SERVICE ---
 sc.exe start "%SERVICE_NAME%"
 
 echo.
-echo Done! Service is now installed. If 'sc start' fails, check your password.
+echo Done! Service is now installed and running with correct permissions.
 pause
 goto MENU
 
