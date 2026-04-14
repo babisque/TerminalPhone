@@ -15,7 +15,7 @@ public class TerminalApplicationService
         _executor = executor;
     }
 
-    public async Task<CommandResultDto> ExecuteByAlias(string alias)
+    public async Task<CommandResultDto> ExecuteByAlias(string alias, Action<string>? onOutputReceived = null)
     {
         var (isValid, command) = await _guard.ValidateRequest(alias);
 
@@ -27,7 +27,7 @@ public class TerminalApplicationService
             DateTime.UtcNow
         );
 
-        var result = await _executor.ExecuteAsync(command);
+        var result = await _executor.ExecuteAsync(command, onOutputReceived);
 
         return new CommandResultDto
         (
