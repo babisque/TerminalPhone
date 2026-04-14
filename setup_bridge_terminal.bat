@@ -49,19 +49,8 @@ set /p "USER_PASS=Enter your Windows password: "
 
 echo.
 echo --- GRANTING 'LOG ON AS A SERVICE' PERMISSION ---
-powershell -NoProfile -Command ^
-    "$user = '%RUN_AS_USER%'; ^
-    $sid = (New-Object System.Security.Principal.NTAccount($user)).Translate([System.Security.Principal.SecurityIdentifier]).Value; ^
-    $tmpFile = [System.IO.Path]::GetTempFileName(); ^
-    secedit /export /cfg $tmpFile /areas USER_RIGHTS /quiet; ^
-    $content = Get-Content $tmpFile; ^
-    if ($content -match 'SeServiceLogonRight') { ^
-        if ($content -match $sid) { Write-Host 'Permission already granted.' } ^
-        else { $content = $content -replace 'SeServiceLogonRight = ', ('SeServiceLogonRight = *' + $sid + ','); Set-Content $tmpFile $content; secedit /configure /db $env:temp\secedit.sdb /cfg $tmpFile /areas USER_RIGHTS /quiet; Write-Host 'Permission granted successfully.' } ^
-    } else { ^
-        $content += 'SeServiceLogonRight = *' + $sid; Set-Content $tmpFile $content; secedit /configure /db $env:temp\secedit.sdb /cfg $tmpFile /areas USER_RIGHTS /quiet; Write-Host 'Permission granted successfully.' ^
-    }; ^
-    Remove-Item $tmpFile -ErrorAction SilentlyContinue"
+:: One-liner PowerShell command to avoid Batch line-continuation bugs
+powershell -NoProfile -Command "$u='%RUN_AS_USER%';$s=(New-Object System.Security.Principal.NTAccount($u)).Translate([System.Security.Principal.SecurityIdentifier]).Value;$f=[System.IO.Path]::GetTempFileName();secedit /export /cfg $f /areas USER_RIGHTS /quiet;$c=Get-Content $f;if($c -match 'SeServiceLogonRight'){if($c -match $s){echo 'Already granted'}else{$c=$c -replace 'SeServiceLogonRight = ',('SeServiceLogonRight = *' + $s + ',');Set-Content $f $c;secedit /configure /db $env:temp\secedit.sdb /cfg $f /areas USER_RIGHTS /quiet;echo 'Granted'}}else{$c+='SeServiceLogonRight = *' + $s;Set-Content $f $c;secedit /configure /db $env:temp\secedit.sdb /cfg $f /areas USER_RIGHTS /quiet;echo 'Granted'};Remove-Item $f -ErrorAction SilentlyContinue"
 
 goto DATA_COLLECTION
 
@@ -82,6 +71,15 @@ echo --- STEP 2: CONFIGURING SYSTEM ENVIRONMENT VARIABLES ---
 setx /M TelegramSettings__AdminId "%ADMIN_ID%"
 setx /M TelegramSettings__GroupId "%GROUP_ID%"
 setx /M TelegramSettings__Token "%BOT_TOKEN%"
+
+echo.
+echo --- STEP 2.5: STOPPING EXISTING SERVICE (IF RUNNING) ---
+sc.exe query "%SERVICE_NAME%" >nul 2>&1
+if %errorLevel% equ 0 (
+    echo Stopping %SERVICE_NAME% to release file locks...
+    sc.exe stop "%SERVICE_NAME%" >nul 2>&1
+    timeout /t 5 /nobreak >nul
+)
 
 echo.
 echo --- STEP 3: PUBLISHING PROJECT ---
