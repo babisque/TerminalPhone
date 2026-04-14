@@ -21,7 +21,7 @@ jobs:
 
     - name: Build and Publish
       run: |
-        dotnet publish TerminalPhone.slnx -c Release -r win-x64 --self-contained true -o ./publish
+        dotnet publish TerminalPhone.Worker/TerminalPhone.Worker.csproj -c Release -r win-x64 --self-contained true -o ./publish
 
     - name: Prepare Release Package
       run: |
