@@ -21,7 +21,9 @@ if (string.IsNullOrEmpty(token))
     throw new InvalidOperationException("Telegram token not found in appsettings.json");
 
 builder.Services.AddSingleton<ICommandRepository>(sp =>
-    new JsonCommandRepository("commands.json"));
+    new JsonCommandRepository(
+        "commands.json",
+        sp.GetRequiredService<ILogger<JsonCommandRepository>>()));
 
 builder.Services.AddSingleton<ITelegramBotClient>(sp =>
     new TelegramBotClient(token));
