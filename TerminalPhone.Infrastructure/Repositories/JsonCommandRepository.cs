@@ -1,28 +1,28 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 using TerminalPhone.Core.Entities;
 using TerminalPhone.Core.Enums;
 using TerminalPhone.Core.Interfaces;
 
 namespace TerminalPhone.Infrastructure.Repositories;
 
-public class JsonCommandRepository : ICommandRepository
+public class JsonCommandRepository(string fileName, ILogger<JsonCommandRepository> logger) : ICommandRepository
 {
     private readonly List<TerminalCommand> _commands = [];
+    private readonly string _path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
 
-    public JsonCommandRepository(string fileName)
+    public async Task InitializeAsync()
     {
-        var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
-
-        if (!File.Exists(path))
+        if (!File.Exists(_path))
         {
-            Console.WriteLine($"[ERROR] Command file not found: {path}");
+            logger.LogError("Command file not found: {Path}", _path);
             return;
         }
 
         try
         {
-            var json = File.ReadAllText(path);
+            var json = await File.ReadAllTextAsync(_path);
 
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             options.Converters.Add(new JsonStringEnumConverter());
@@ -31,6 +31,7 @@ public class JsonCommandRepository : ICommandRepository
 
             if (dtos != null)
             {
+                _commands.Clear();
                 foreach (var dto in dtos)
                 {
                     _commands.Add(new TerminalCommand(
@@ -39,12 +40,12 @@ public class JsonCommandRepository : ICommandRepository
                         dto.Environment,
                         dto.Description));
                 }
-                Console.WriteLine($"[INFO] {_commands.Count} commands loaded successfully.");
+                logger.LogInformation("{Count} commands loaded successfully.", _commands.Count);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ERROR] Failed to load commands: {ex.Message}");
+            logger.LogError(ex, "Failed to load commands from {Path}", _path);
         }
     }
 

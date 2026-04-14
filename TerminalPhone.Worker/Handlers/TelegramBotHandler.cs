@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 using Telegram.Bot;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TerminalPhone.Application.Services;
@@ -96,7 +97,14 @@ public class TelegramBotHandler
             var text = $"⏳ <b>Executing:</b> <code>{alias}</code>\n\n<pre>{encoded}</pre>";
             await _botClient.EditMessageText(chatId, messageId, text, parseMode: ParseMode.Html);
         }
-        catch { /* Ignore minor update flickering errors */ }
+        catch (ApiRequestException ex)
+        {
+            _logger.LogWarning("Telegram API Rate Limit or update conflict during live update: {Message}", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during live update for command {Alias}", alias);
+        }
     }
 
     public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)

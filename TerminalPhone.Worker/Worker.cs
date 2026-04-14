@@ -10,10 +10,13 @@ namespace TerminalPhone.Worker;
 public class Worker(
     ITelegramBotClient botClient,
     TelegramBotHandler handler,
+    ILogger<Worker> logger,
     ICommandRepository commandRepository) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await commandRepository.InitializeAsync();
+        
         var commands = await commandRepository.GetAllAsync();
         var botCommands = commands.Select(c => new BotCommand
         {
@@ -34,7 +37,7 @@ public class Worker(
             receiverOptions: receiverOptions,
             cancellationToken: stoppingToken);
 
-        Console.WriteLine("Bot started with Slash Commands.");
+        logger.LogInformation("Bot started with Slash Commands.");
 
         await Task.Delay(Timeout.Infinite, stoppingToken);
     }

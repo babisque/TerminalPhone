@@ -67,8 +67,19 @@ public class TerminalExecutor : ITerminalExecutor
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
-        await process.WaitForExitAsync();
+        const int timeoutSeconds = 30;
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
 
-        return new ExecutionResponse(outputBuilder.ToString().Trim(), process.ExitCode);
+        try
+        {
+            await process.WaitForExitAsync(cts.Token);
+            return new ExecutionResponse(outputBuilder.ToString().Trim(), process.ExitCode);
+        }
+        catch (OperationCanceledException)
+        {
+            process.Kill(entireProcessTree: true);
+            var timeoutMessage = $"Command timed out after {timeoutSeconds} seconds.";
+            return new ExecutionResponse(timeoutMessage, -1);
+        }
     }
 }

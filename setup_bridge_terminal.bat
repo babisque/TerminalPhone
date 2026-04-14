@@ -45,15 +45,13 @@ set /p "GROUP_ID=Enter Telegram Group ID (GroupId): "
 set /p "BOT_TOKEN=Enter Telegram Bot Token (Token): "
 
 echo.
-echo --- STEP 2: CONFIGURING USER SECRETS ---
-pushd "%PROJECT_DIR%"
-echo Saving TelegramSettings:AdminId...
-dotnet user-secrets set "TelegramSettings:AdminId" "%ADMIN_ID%"
-echo Saving TelegramSettings:GroupId...
-dotnet user-secrets set "TelegramSettings:GroupId" "%GROUP_ID%"
-echo Saving TelegramSettings:Token...
-dotnet user-secrets set "TelegramSettings:Token" "%BOT_TOKEN%"
-popd
+echo --- STEP 2: CONFIGURING SYSTEM ENVIRONMENT VARIABLES ---
+echo Saving TelegramSettings__AdminId...
+setx /M TelegramSettings__AdminId "%ADMIN_ID%"
+echo Saving TelegramSettings__GroupId...
+setx /M TelegramSettings__GroupId "%GROUP_ID%"
+echo Saving TelegramSettings__Token...
+setx /M TelegramSettings__Token "%BOT_TOKEN%"
 
 echo.
 echo --- STEP 3: PUBLISHING PROJECT ---
@@ -71,7 +69,7 @@ if not exist "%PUBLISH_DIR%\%EXE_NAME%" (
 :: Create the service (note the mandatory space after binPath=)
 sc.exe create "%SERVICE_NAME%" binPath= "\"%PUBLISH_DIR%\%EXE_NAME%\"" start= auto
 sc.exe description "%SERVICE_NAME%" "%DESCRIPTION%"
-sc.exe config "%SERVICE_NAME%" DisplayName= "%SERVICE_NAME%"
+sc.exe config "%SERVICE_NAME%" DisplayName= "Bridge Terminal Service"
 
 echo.
 echo --- STEP 5: STARTING SERVICE ---
