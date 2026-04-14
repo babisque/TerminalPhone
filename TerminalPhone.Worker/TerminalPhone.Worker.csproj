@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-TerminalPhone.Worker-d1cb4062-167c-4145-a299-2dcfac1566f1</UserSecretsId>
+  </PropertyGroup>
+
+	<ItemGroup>
+		<None Update="commands.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.5" />
+    <PackageReference Include="Telegram.Bot" Version="22.9.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TerminalPhone.Application\TerminalPhone.Application.csproj" />
+    <ProjectReference Include="..\TerminalPhone.Infrastructure\TerminalPhone.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

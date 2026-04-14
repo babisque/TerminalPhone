@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
+  <Project Path="TerminalPhone.Application/TerminalPhone.Application.csproj" />
+  <Project Path="TerminalPhone.Core/TerminalPhone.Core.csproj" />
+  <Project Path="TerminalPhone.Infrastructure/TerminalPhone.Infrastructure.csproj" />
+  <Project Path="TerminalPhone.Worker/TerminalPhone.Worker.csproj" Id="4d9908b5-403f-4ab1-9a7b-69e106c1c8a1" />
+</Solution>

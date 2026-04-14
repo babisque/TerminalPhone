@@ -1,0 +1,26 @@
+[
+    {
+        "Alias": "check-arch",
+        "Script": "neofetch",
+        "Environment": "ArchLinux",
+        "Description": "Check archlinux status"
+    },
+  {
+    "Alias": "win-ip",
+    "Script": "ipconfig",
+    "Environment": "Windows",
+    "Description": "Check windows ip address"
+  },
+  {
+    "Alias": "update-all",
+    "Script": "winget upgrade --all --silent --accept-package-agreements --accept-source-agreements --include-unknown",
+    "Environment": "Windows",
+    "Description": "Update all Windows applications"
+  },
+  {
+    "Alias": "shutdown",
+    "Script": "shutdown /s /t 0",
+    "Environment": "Windows",
+    "Description": "Shutdown Windows"
+  }
+]
