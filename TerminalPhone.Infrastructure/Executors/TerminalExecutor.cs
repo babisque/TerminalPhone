@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text;
 using TerminalPhone.Core.Entities;
 using TerminalPhone.Core.Enums;
@@ -12,23 +12,23 @@ public class TerminalExecutor : ITerminalExecutor
     {
         return command.Environment switch
         {
-            ExecutionEnvironment.Windows => await ExecuteWindows(command.Script.Value, onOutputReceived),
-            ExecutionEnvironment.ArchLinux => await ExecuteWsl(command.Script.Value, onOutputReceived),
+            ExecutionEnvironment.Windows => await ExecuteWindows(command, onOutputReceived),
+            ExecutionEnvironment.ArchLinux => await ExecuteWsl(command, onOutputReceived),
             _ => throw new NotSupportedException($"Execution environment '{command.Environment}' is not supported.")
         };
     }
 
-    private async Task<ExecutionResponse> ExecuteWindows(string script, Action<string>? onOutputReceived)
+    private async Task<ExecutionResponse> ExecuteWindows(TerminalCommand command, Action<string>? onOutputReceived)
     {
-        return await RunProcess("cmd.exe", $"/c {script}", onOutputReceived);
+        return await RunProcess("cmd.exe", $"/c {command.Script.Value}", onOutputReceived, command.TimeoutSeconds);
     }
 
-    private async Task<ExecutionResponse> ExecuteWsl(string script, Action<string>? onOutputReceived)
+    private async Task<ExecutionResponse> ExecuteWsl(TerminalCommand command, Action<string>? onOutputReceived)
     {
-        return await RunProcess("wsl.exe", $"-d Arch -u d0c -e {script}", onOutputReceived);
+        return await RunProcess("wsl.exe", $"-d Arch -u d0c -e {command.Script.Value}", onOutputReceived, command.TimeoutSeconds);
     }
 
-    private async Task<ExecutionResponse> RunProcess(string fileName, string arguments, Action<string>? onOutputReceived)
+    private async Task<ExecutionResponse> RunProcess(string fileName, string arguments, Action<string>? onOutputReceived, int? timeoutOverride = null)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -67,7 +67,7 @@ public class TerminalExecutor : ITerminalExecutor
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
-        const int timeoutSeconds = 30;
+        int timeoutSeconds = timeoutOverride ?? 30;
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
 
         try

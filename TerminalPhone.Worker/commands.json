@@ -1,20 +1,24 @@
 [
   {
     "Alias": "update_all",
-    "Script": "winget upgrade --all --silent --accept-package-agreements --accept-source-agreements --include-unknown",
+    "Script": "\"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\winget.exe\" upgrade --all --silent --accept-package-agreements --accept-source-agreements --include-unknown",
     "Environment": "Windows",
-    "Description": "Update all Windows applications"
+    "Description": "Update all Windows applications",
+    "TimeoutSeconds": 300,
+    "ResponseStrategy": "MultiStep"
   },
   {
     "Alias": "shutdown",
     "Script": "shutdown /s /t 0",
     "Environment": "Windows",
-    "Description": "Shutdown Windows"
+    "Description": "Shutdown Windows",
+    "ResponseStrategy": "Verbose"
   },
   {
     "Alias": "ping",
-    "Script": "ping -t google.com -n 5",
+    "Script": "ping google.com -n 5",
     "Environment": "Windows",
-    "Description": "Ping google.com continuously"
+    "Description": "Ping google.com continuously",
+    "ResponseStrategy": "SummaryOnly"
   }
 ]
