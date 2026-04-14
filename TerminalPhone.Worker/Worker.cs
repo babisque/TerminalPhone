@@ -1,16 +1,28 @@
-using System.Reflection.Metadata;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using TerminalPhone.Application.Services;
+using TerminalPhone.Core.Interfaces;
 using TerminalPhone.Worker.Handlers;
 
 namespace TerminalPhone.Worker;
 
-public class Worker(ITelegramBotClient botClient, TelegramBotHandler handler) : BackgroundService
+public class Worker(
+    ITelegramBotClient botClient,
+    TelegramBotHandler handler,
+    ICommandRepository commandRepository) : BackgroundService
 {
-   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var commands = await commandRepository.GetAllAsync();
+        var botCommands = commands.Select(c => new BotCommand
+        {
+            Command = c.Alias,
+            Description = c.Description
+        });
+
+        await botClient.SetMyCommands(botCommands, cancellationToken: stoppingToken);
+
         var receiverOptions = new ReceiverOptions
         {
             AllowedUpdates = Array.Empty<UpdateType>()
@@ -22,7 +34,7 @@ public class Worker(ITelegramBotClient botClient, TelegramBotHandler handler) : 
             receiverOptions: receiverOptions,
             cancellationToken: stoppingToken);
 
-        Console.WriteLine("Bot started.");
+        Console.WriteLine("Bot started with Slash Commands.");
 
         await Task.Delay(Timeout.Infinite, stoppingToken);
     }

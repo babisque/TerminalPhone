@@ -31,7 +31,6 @@ public class TelegramBotHandler
 
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
-        // 1. Security Check via IOptions
         if (update.Message?.From?.Id != _options.AdminId) return;
 
         if (update.Type != UpdateType.Message || update.Message?.Text is not { } messageText)
@@ -58,7 +57,6 @@ public class TelegramBotHandler
             {
                 liveOutput.AppendLine(line);
 
-                // Throttle updates to every 2 seconds to avoid Telegram Rate Limits
                 if ((DateTime.UtcNow - lastUpdate).TotalSeconds > 2)
                 {
                     await UpdateLiveMessage(chatId, processingMsg.MessageId, alias, liveOutput.ToString());
@@ -85,7 +83,7 @@ public class TelegramBotHandler
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error sending final response");
-                await _botClient.SendMessage(chatId, "⚠️ <b>Error:</b> Failed to send terminal output.");
+                await _botClient.SendMessage(chatId, "⚠️ <b>Error:</b> Failed to deliver command output.");
             }
         }
     }
@@ -96,13 +94,9 @@ public class TelegramBotHandler
         {
             var encoded = HttpUtility.HtmlEncode(currentOutput);
             var text = $"⏳ <b>Executing:</b> <code>{alias}</code>\n\n<pre>{encoded}</pre>";
-
             await _botClient.EditMessageText(chatId, messageId, text, parseMode: ParseMode.Html);
         }
-        catch (Exception ex)
-        {
-            _logger.LogWarning("Failed to update live log: {Message}", ex.Message);
-        }
+        catch { /* Ignore minor update flickering errors */ }
     }
 
     public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)

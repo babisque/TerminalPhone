@@ -1,7 +1,4 @@
 <Solution>
-  <Folder Name="/Solution Items/">
-    <File Path=".editorconfig" />
-  </Folder>
   <Project Path="TerminalPhone.Application/TerminalPhone.Application.csproj" />
   <Project Path="TerminalPhone.Core/TerminalPhone.Core.csproj" />
   <Project Path="TerminalPhone.Infrastructure/TerminalPhone.Infrastructure.csproj" />
