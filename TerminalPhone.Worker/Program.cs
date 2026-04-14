@@ -1,5 +1,6 @@
 using Telegram.Bot;
 using TerminalPhone.Application.Services;
+using TerminalPhone.Core.Entities;
 using TerminalPhone.Core.Interfaces;
 using TerminalPhone.Core.Services;
 using TerminalPhone.Infrastructure.Executors;
@@ -24,6 +25,9 @@ builder.Services.AddSingleton<ICommandRepository>(sp =>
 
 builder.Services.AddSingleton<ITelegramBotClient>(sp =>
     new TelegramBotClient(token));
+
+builder.Services.Configure<TelegramOptions>(
+    builder.Configuration.GetSection(TelegramOptions.SectionName));
 
 builder.Services.AddScoped<CommandExecutionGuard>();
 builder.Services.AddScoped<TerminalApplicationService>();
