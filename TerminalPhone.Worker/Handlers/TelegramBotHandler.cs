@@ -53,9 +53,9 @@ public class TelegramBotHandler
                 return;
             }
 
-            _logger.LogInformation("Command received: {Alias} with Strategy: {Strategy}", alias, command.ResponseStrategy);
+            _logger.LogInformation("Command received: {Alias} with Strategy: {Strategy}", alias, command.Strategy);
 
-            switch (command.ResponseStrategy)
+            switch (command.Strategy)
             {
                 case ResponseStrategy.SummaryOnly:
                     await HandleSummaryOnlyStrategy(chatId, command, terminalService, cancellationToken);

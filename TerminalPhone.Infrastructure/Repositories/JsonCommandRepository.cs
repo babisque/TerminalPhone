@@ -40,7 +40,7 @@ public class JsonCommandRepository(string fileName, ILogger<JsonCommandRepositor
                         dto.Environment,
                         dto.Description,
                         dto.TimeoutSeconds,
-                        dto.ResponseStrategy));
+                        dto.Strategy));
                 }
                 logger.LogInformation("{Count} commands loaded successfully.", _commands.Count);
             }
@@ -66,6 +66,6 @@ public class JsonCommandRepository(string fileName, ILogger<JsonCommandRepositor
         public ExecutionEnvironment Environment { get; set; }
         public string Description { get; set; } = "";
         public int? TimeoutSeconds { get; set; }
-        public ResponseStrategy ResponseStrategy { get; set; } = ResponseStrategy.Verbose;
+        public ResponseStrategy Strategy { get; set; } = ResponseStrategy.Verbose;
     }
 }
