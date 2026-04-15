@@ -61,19 +61,40 @@ goto DATA_COLLECTION
 
 :DATA_COLLECTION
 echo.
-echo --- STEP 1: DATA COLLECTION ---
+echo --- STEP 2: DATA COLLECTION ---
+
+set "USE_EXISTING=N"
+if defined TelegramSettings__AdminId (
+    if defined TelegramSettings__Token (
+        echo.
+        echo [INFO] Existing configuration found:
+        echo        Admin ID: %TelegramSettings__AdminId%
+        echo        Group ID: %TelegramSettings__GroupId%
+        echo        Token:    [ALREADY CONFIGURED]
+        echo.
+        set /p "USE_EXISTING=Use these existing settings? (Y/N): "
+    )
+)
+
+if /i "%USE_EXISTING%"=="Y" (
+    echo.
+    echo Skipping configuration step...
+    goto STEP4
+)
+
 set /p "ADMIN_ID=Enter Telegram Admin ID (AdminId): "
 set /p "GROUP_ID=Enter Telegram Group ID (GroupId): "
 set /p "BOT_TOKEN=Enter Telegram Bot Token (Token): "
 
 echo.
-echo --- STEP 2: CONFIGURING SYSTEM ENVIRONMENT VARIABLES ---
+echo --- STEP 3: CONFIGURING SYSTEM ENVIRONMENT VARIABLES ---
 setx /M TelegramSettings__AdminId "%ADMIN_ID%"
 setx /M TelegramSettings__GroupId "%GROUP_ID%"
 setx /M TelegramSettings__Token "%BOT_TOKEN%"
 
+:STEP4
 echo.
-echo --- STEP 2.5: STOPPING EXISTING SERVICE (IF RUNNING) ---
+echo --- STEP 4: STOPPING EXISTING SERVICE (IF RUNNING) ---
 sc.exe query "%SERVICE_NAME%" >nul 2>&1
 if %errorLevel% equ 0 (
     echo Stopping %SERVICE_NAME% to release file locks...
@@ -82,11 +103,11 @@ if %errorLevel% equ 0 (
 )
 
 echo.
-echo --- STEP 3: PUBLISHING PROJECT ---
+echo --- STEP 5: PUBLISHING PROJECT ---
 dotnet publish "%PROJECT_DIR%" -c Release -o "%PUBLISH_DIR%"
 
 echo.
-echo --- STEP 4: CREATING WINDOWS SERVICE ---
+echo --- STEP 6: CREATING WINDOWS SERVICE ---
 if not exist "%PUBLISH_DIR%\%EXE_NAME%" (
     echo ERROR: Binary not found at "%PUBLISH_DIR%\%EXE_NAME%"
     pause
@@ -104,7 +125,7 @@ sc.exe description "%SERVICE_NAME%" "%DESCRIPTION%"
 sc.exe config "%SERVICE_NAME%" DisplayName= "%DISPLAY_NAME%"
 
 echo.
-echo --- STEP 5: STARTING SERVICE ---
+echo --- STEP 7: STARTING SERVICE ---
 sc.exe start "%SERVICE_NAME%"
 
 echo.
